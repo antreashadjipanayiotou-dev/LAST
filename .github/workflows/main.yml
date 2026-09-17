@@ -28,7 +28,7 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.9"
+          gradle-version: "8.11.1"
           cache-disabled: true
 
       - name: Find ZIP
@@ -65,10 +65,10 @@ jobs:
         run: |
           set -e
 
-          SETTINGS=$(find android_project -type f \( \
+          SETTINGS=$(find android_project -type f \
             -name 'settings.gradle' \
             -o -name 'settings.gradle.kts' \
-          \) | head -n 1)
+          | head -n 1)
 
           if [ -z "$SETTINGS" ]; then
             echo "ERROR: Android project not found."
@@ -89,80 +89,7 @@ jobs:
         run: |
           set -e
 
-          find . -type f \( \
+          find . -type f \
             -name 'build.gradle' \
             -o -name 'build.gradle.kts' \
-          \) -print0 | while IFS= read -r -d '' FILE
-          do
-            sed -i \
-              -e 's/compileSdk = 35/compileSdk = 36/g' \
-              -e 's/targetSdk = 35/targetSdk = 36/g' \
-              "$FILE"
-          done
-
-      - name: Build APK
-        working-directory: ${{ env.PROJECT_DIR }}
-        shell: bash
-        run: |
-          set -e
-
-          gradle \
-            --no-daemon \
-            --no-parallel \
-            --max-workers=1 \
-            :app:assembleDebug \
-            --stacktrace \
-            --console=plain
-
-      - name: Find APK
-        shell: bash
-        run: |
-          set -e
-
-          APK_FILE=$(find "$GITHUB_WORKSPACE" \
-            -type f \
-            -name '*.apk' | head -n 1)
-
-          if [ -z "$APK_FILE" ]; then
-            echo "ERROR: APK NOT FOUND."
-            exit 1
-          fi
-
-          mkdir -p artifact_apk
-
-          cp "$APK_FILE" \
-            artifact_apk/AndreasHadjiApp-debug.apk
-
-          echo "APK FOUND:"
-          ls -lh artifact_apk/AndreasHadjiApp-debug.apk
-
-      - name: Verify APK
-        shell: bash
-        run: |
-          set -e
-
-          APK="artifact_apk/AndreasHadjiApp-debug.apk"
-
-          if [ ! -f "$APK" ]; then
-            echo "ERROR: APK does not exist."
-            exit 1
-          fi
-
-          SIZE=$(stat -c%s "$APK")
-
-          echo "APK SIZE: $SIZE bytes"
-
-          if [ "$SIZE" -le 10000 ]; then
-            echo "ERROR: APK file is too small."
-            exit 1
-          fi
-
-          echo "APK VERIFIED SUCCESSFULLY."
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: AndreasHadjiApp-APK
-          path: artifact_apk/AndreasHadjiApp-debug.apk
-          if-no-files-found: error
-          retention-days: 30
+          -print
